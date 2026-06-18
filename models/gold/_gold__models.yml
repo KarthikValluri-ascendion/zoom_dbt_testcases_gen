@@ -1,0 +1,26 @@
+version: 2
+
+# NOTE: fct_meetings is INTENTIONALLY absent from this file -- it ships with no
+# schema, singular, or unit tests. That is the RED state the on-run-start
+# coverage gate (zoom-ttd interceptor) catches on a pull request. Running
+# /zoom-ttd:build (or the scaffold + gen-unit-tests scripts) generates its tests
+# and turns the gate GREEN.
+models:
+  - name: dim_accounts
+    description: "Account dimension with lifecycle stage."
+    columns:
+      - name: account_id
+        data_tests: [not_null, unique]
+      - name: lifecycle_stage
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['new', 'growing', 'mature']
+
+  - name: dim_hosts
+    description: "Host dimension with hosting rollups and primary account."
+    columns:
+      - name: host_email
+        data_tests: [not_null, unique]
+      - name: meetings_hosted
+        data_tests: [not_null]

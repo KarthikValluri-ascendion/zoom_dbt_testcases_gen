@@ -1,0 +1,12 @@
+version: 2
+
+# Bronze is a pure pass-through layer and is intentionally exempt from the
+# coverage gate (ttd_exempt_prefixes = ['brz_'] in dbt_project.yml). Documented
+# here for lineage; no tests required.
+models:
+  - name: brz_meetings
+    description: "Pass-through of raw_meetings."
+  - name: brz_participants
+    description: "Pass-through of raw_participants."
+  - name: brz_accounts
+    description: "Pass-through of raw_accounts."
