@@ -1,0 +1,12 @@
+meeting_id,account_id,host_email,topic,status_code,start_time,duration_minutes,invited_count
+M0001,A001,Alice@ACME.com,weekly sync,E,2026-01-05 09:00:00,45,8
+M0002,A001,alice@acme.com,Design Review,E,2026-01-06 14:00:00,60,5
+M0003,A002,BOB@globex.com,sales pipeline,E,2026-01-05 10:30:00,30,12
+M0004,A003,carol@initech.com,all hands,E,2026-01-07 16:00:00,90,200
+M0005,A002,bob@globex.com,1:1 catchup,C,2026-01-08 11:00:00,,2
+M0006,A004,dave@umbrella.com,onboarding,S,2026-01-09 13:00:00,25,5
+M0007,A005,erin@soylent.com,team retro,E,2026-01-10 15:00:00,55,10
+M0008,A006,FRANK@stark.com,quarterly review,O,2026-01-12 09:30:00,120,40
+M0008,A006,FRANK@stark.com,quarterly review,O,2026-01-12 09:30:00,120,40
+M0009,A001,alice@acme.com,budget planning,E,2026-01-11 08:00:00,40,6
+M0010,A003,carol@initech.com,security sync,E,2026-01-13 17:00:00,35,15

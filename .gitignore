@@ -1,0 +1,18 @@
+# dbt build artifacts
+target/
+dbt_packages/
+logs/
+.user.yml
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+# local env / secrets (never commit real credentials)
+.env
+# generated executive dashboard output is fine to ignore by default
+# artifacts/   # (uncomment if you do NOT want to track the scorecard outputs)
+
+# OS
+.DS_Store
+Thumbs.db

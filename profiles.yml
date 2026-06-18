@@ -1,0 +1,22 @@
+# Repo-local, SECRET-FREE dbt profile. Safe to commit: every sensitive value is
+# read from an environment variable. GitHub Actions injects these from repo
+# secrets; locally you export them in your shell (see README).
+#
+# Point dbt at this file in CI with:  DBT_PROFILES_DIR=.
+zoom_ttd:
+  target: ci
+  outputs:
+    ci:
+      type: snowflake
+      account:   "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:      "{{ env_var('SNOWFLAKE_USER') }}"
+      password:  "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role:      "{{ env_var('SNOWFLAKE_ROLE', 'ACCOUNTADMIN') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"
+      database:  "{{ env_var('SNOWFLAKE_DATABASE', 'DB01') }}"
+      # In a PR run, CI sets DBT_PR_SCHEMA=PR_<number> and generate_schema_name
+      # turns this into PR_<n>_BRONZE / _SILVER / _GOLD. On main it is unset and
+      # the custom-schema macro produces the ZOOM_* production schemas.
+      schema:    "{{ env_var('DBT_PR_SCHEMA', 'ZOOM_DEV') }}"
+      threads: 4
+      client_session_keep_alive: false

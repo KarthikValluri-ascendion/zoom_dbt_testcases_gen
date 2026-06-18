@@ -1,0 +1,7 @@
+account_id,account_name,tier_code,region_code,signup_date,seat_count
+A001,acme corp,3,us-west,2023-01-15,50
+A002,Globex,2,US-EAST,2024-11-20,20
+A003,initech,4,emea,2021-06-30,200
+A004,Umbrella,1, apac ,2025-05-01,5
+A005,SOYLENT,2,us-west,2024-12-15,15
+A006,Stark Ind,3,EMEA,2022-03-10,75

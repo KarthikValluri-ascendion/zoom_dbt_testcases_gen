@@ -1,0 +1,39 @@
+version: 2
+
+# Force the raw landing columns to land as strings (and the genuinely-numeric
+# counts as integers). This mimics a messy raw zone and makes the silver-layer
+# casts (::timestamp, ::date) real transformations the unit tests can assert.
+seeds:
+  - name: raw_accounts
+    description: "Raw Zoom account records (messy: mixed-case names/regions, string dates, tier codes)."
+    config:
+      column_types:
+        account_id: varchar
+        account_name: varchar
+        tier_code: varchar
+        region_code: varchar
+        signup_date: varchar
+        seat_count: integer
+
+  - name: raw_meetings
+    description: "Raw Zoom meeting records (messy: duplicate rows, mixed-case host emails, status codes, null durations)."
+    config:
+      column_types:
+        meeting_id: varchar
+        account_id: varchar
+        host_email: varchar
+        topic: varchar
+        status_code: varchar
+        start_time: varchar
+        duration_minutes: integer
+        invited_count: integer
+
+  - name: raw_participants
+    description: "Raw Zoom participant join/leave events (messy: duplicate join events, mixed-case emails, string timestamps, clock skew)."
+    config:
+      column_types:
+        meeting_id: varchar
+        participant_id: varchar
+        participant_email: varchar
+        join_time: varchar
+        leave_time: varchar

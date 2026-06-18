@@ -1,0 +1,57 @@
+name: 'testcases_dbt'
+version: '1.0.0'
+config-version: 2
+
+# Profile is resolved from the repo-local profiles.yml (env_var driven) when
+# DBT_PROFILES_DIR=. , else from ~/.dbt/profiles.yml. See profiles.yml.
+profile: 'zoom_ttd'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+# The zoom-ttd plugin macros (interceptor + custom schema) are picked up directly
+# from the plugin's assets folder -- single source of truth, no copy needed.
+macro-paths: ["macros", "zoom-ttd-plugin/assets/macros"]
+analysis-paths: ["analyses"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# ---------------------------------------------------------------------------
+# THE INTERCEPTOR: the zoom-ttd coverage gate runs on-run-start (fail fast).
+# It aborts `dbt build` / `dbt compile` BEFORE any model materializes if any
+# in-scope model has zero tests (schema, singular, or unit).
+# ---------------------------------------------------------------------------
+on-run-start:
+  - "{{ ttd_intercept_coverage() }}"
+
+vars:
+  # Master switch for the interceptor. CI keeps this true; pass
+  # `--vars 'ttd_enforce: false'` to bypass the gate (e.g. the very first
+  # bootstrap build, or the internal compile used by the unit-test generator).
+  ttd_enforce: true
+  # Bronze is a pure pass-through layer -- exempt it so the gate focuses on the
+  # silver/gold models that actually carry transformation logic.
+  ttd_exempt_prefixes: ['brz_']
+
+seeds:
+  testcases_dbt:
+    +schema: bronze
+    +quote_columns: false
+
+models:
+  testcases_dbt:
+    bronze:
+      +materialized: view
+      +schema: bronze
+      +tags: ["bronze"]
+    silver:
+      +materialized: view
+      +schema: silver
+      +tags: ["silver"]
+    gold:
+      +materialized: table
+      +schema: gold
+      +tags: ["gold"]
