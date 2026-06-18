@@ -1,0 +1,10 @@
+{
+  "name": "zoom-ttd",
+  "version": "1.0.0",
+  "displayName": "Zoom Test-Then-Deploy",
+  "description": "Test-Then-Deploy coverage gate for dbt + Snowflake: an on-run-start interceptor, A/B/F graders, and auto-generated functional + unit tests, wired for GitHub Actions Slim CI with deferral.",
+  "author": { "name": "KarthikValluri-ascendion" },
+  "license": "internal",
+  "keywords": ["dbt", "snowflake", "testing", "ci", "slim-ci", "coverage", "zoom"],
+  "defaultEnabled": true
+}

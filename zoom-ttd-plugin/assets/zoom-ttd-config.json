@@ -1,0 +1,20 @@
+{
+  "profile": "zoom_ttd",
+  "enforce": true,
+  "exempt_prefixes": ["brz_"],
+  "sample_rows": 8,
+  "stub_prefix": "_ttd_stub__",
+  "unit_prefix": "_ttd_unit__",
+  "categories": {
+    "conditional_logic": "CASE / IFF branching",
+    "dedup": "QUALIFY / ROW_NUMBER / DISTINCT de-duplication",
+    "string_transform": "TRIM / UPPER / INITCAP / casts / date functions",
+    "edge_case": "COALESCE / NULLIF / LEAST / GREATEST null & bound guards"
+  },
+  "grades": {
+    "A": "has functional test(s) AND a unit test exercising the model's logic categories",
+    "B": "has functional and/or singular test(s) but NO unit test covering the logic",
+    "F": "no tests at all (also blocked by the on-run-start interceptor)"
+  },
+  "notes": "Central defaults for the zoom-ttd plugin (interceptor + graders + generators)."
+}

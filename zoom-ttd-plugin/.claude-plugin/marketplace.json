@@ -1,0 +1,13 @@
+{
+  "name": "zoom-ci-standards",
+  "owner": { "name": "KarthikValluri-ascendion" },
+  "description": "Zoom CI/CD standards marketplace for dbt + Snowflake (Test-Then-Deploy).",
+  "plugins": [
+    {
+      "name": "zoom-ttd",
+      "source": "./",
+      "description": "Test-Then-Deploy coverage gate + A/B/F graders + Slim CI for dbt.",
+      "version": "1.0.0"
+    }
+  ]
+}
