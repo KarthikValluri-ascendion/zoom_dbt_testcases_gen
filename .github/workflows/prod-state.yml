@@ -1,0 +1,69 @@
+name: prod-state
+
+# Runs on every push to main. Builds the FULL production project (which also runs
+# the coverage gate), then publishes target/manifest.json to the `prod-state`
+# branch. That manifest is the baseline the PR Slim-CI workflow defers against.
+
+on:
+  push:
+    branches: [main]
+
+# Allow the job to push the manifest commit back to the prod-state branch.
+permissions:
+  contents: write
+
+concurrency:
+  group: prod-state
+  cancel-in-progress: false
+
+jobs:
+  build-prod:
+    runs-on: ubuntu-latest
+    env:
+      DBT_PROFILES_DIR: "."
+      SNOWFLAKE_ACCOUNT:   ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER:      ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD:  ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_ROLE:      ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE:  ${{ secrets.SNOWFLAKE_DATABASE }}
+      # DBT_PR_SCHEMA unset on main -> models build into ZOOM_BRONZE/SILVER/GOLD.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt
+        run: pip install -r requirements.txt
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt seed (production)
+        run: dbt seed
+
+      - name: dbt build (production, gate ON)
+        run: dbt build
+
+      - name: Publish prod manifest to prod-state branch
+        run: |
+          set -e
+          cp target/manifest.json /tmp/manifest.json
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin prod-state >/dev/null 2>&1; then
+            git fetch origin prod-state
+            git worktree add /tmp/ps prod-state
+          else
+            git worktree add --orphan -b prod-state /tmp/ps
+          fi
+          mkdir -p /tmp/ps/state
+          cp /tmp/manifest.json /tmp/ps/state/manifest.json
+          ( cd /tmp/ps
+            git add state/manifest.json
+            git commit -m "chore: refresh prod manifest [skip ci]" || { echo "no manifest change"; exit 0; }
+            git push origin prod-state )

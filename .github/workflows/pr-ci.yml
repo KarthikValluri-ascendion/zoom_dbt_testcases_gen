@@ -1,0 +1,74 @@
+name: pr-ci
+
+# Slim CI with deferral. On every PR to main:
+#   1. the coverage gate (interceptor) must pass,
+#   2. only the modified models build, into an ephemeral PR_<n>_* schema,
+#      deferring unmodified parents to the production tables,
+#   3. the grader posts an A/B/F scorecard.
+# Make THIS job a required status check on main to block merges until it's green.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  slim-ci:
+    runs-on: ubuntu-latest
+    env:
+      DBT_PROFILES_DIR: "."
+      DBT_PR_SCHEMA: "PR_${{ github.event.number }}"
+      SNOWFLAKE_ACCOUNT:   ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER:      ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD:  ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_ROLE:      ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE:  ${{ secrets.SNOWFLAKE_DATABASE }}
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt
+        run: pip install -r requirements.txt
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: Restore production state (prod-state branch)
+        uses: actions/checkout@v4
+        with:
+          ref: prod-state
+          path: prod
+      # -> prod/state/manifest.json is the deferral baseline.
+
+      - name: Coverage gate (interceptor, fail fast, no build)
+        run: dbt compile --state prod/state
+
+      - name: Slim build (only modified models, defer the rest to prod)
+        run: >
+          dbt build
+          --select state:modified+
+          --defer --state prod/state --favor-state
+
+      - name: Grade coverage (A/B/F scorecard)
+        if: always()
+        run: python zoom-ttd-plugin/assets/scripts/zttd.py grade
+
+      - name: Upload scorecard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zoom-ttd-scorecard
+          path: artifacts/
+          if-no-files-found: ignore

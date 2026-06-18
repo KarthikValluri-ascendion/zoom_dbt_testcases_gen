@@ -1,0 +1,37 @@
+name: pr-teardown
+
+# When a PR is merged or closed, drop its ephemeral scratch schemas so no
+# Snowflake schema sprawl is left behind.
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  drop-schemas:
+    runs-on: ubuntu-latest
+    env:
+      DBT_PROFILES_DIR: "."
+      DBT_PR_SCHEMA: "PR_${{ github.event.number }}"
+      SNOWFLAKE_ACCOUNT:   ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER:      ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD:  ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_ROLE:      ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE:  ${{ secrets.SNOWFLAKE_DATABASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dbt
+        run: pip install -r requirements.txt
+      - name: dbt deps
+        run: dbt deps
+      - name: Drop PR_${{ github.event.number }} scratch schemas
+        run: >
+          dbt run-operation drop_pr_schemas
+          --args "{pr: PR_${{ github.event.number }}}"
