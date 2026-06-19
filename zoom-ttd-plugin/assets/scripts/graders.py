@@ -46,25 +46,81 @@ def detect_categories(raw_sql: str) -> list[str]:
     return [cat for cat, pat in CATEGORY_PATTERNS.items() if pat.search(sql)]
 
 
-def collect_tests(manifest: dict) -> dict[str, dict]:
-    """Per-model unique_id -> {'generic': n, 'singular': n} test counts."""
-    out: dict[str, dict] = {}
+def _norm_path(p: str) -> str:
+    return (p or "").replace("\\", "/")
+
+
+def _generic_detail(node: dict) -> dict:
+    tm = node.get("test_metadata") or {}
+    kwargs = {
+        k: v
+        for k, v in (tm.get("kwargs") or {}).items()
+        if k not in ("column_name", "model")
+    }
+    return {
+        "name": node.get("name", ""),
+        "type": tm.get("name", ""),
+        "column": node.get("column_name") or "",
+        "args": kwargs,
+        "file": _norm_path(node.get("original_file_path", "")),
+    }
+
+
+def _singular_detail(node: dict) -> dict:
+    return {
+        "name": node.get("name", ""),
+        "sql": node.get("raw_code", "") or "",
+        "file": _norm_path(node.get("original_file_path", "")),
+    }
+
+
+def _unit_detail(node: dict) -> dict:
+    return {
+        "name": node.get("name", ""),
+        "given": node.get("given", []),
+        "expect": node.get("expect", {}),
+        "file": _norm_path(node.get("original_file_path", "")),
+    }
+
+
+def _empty_detail() -> dict:
+    return {"generic": [], "singular": [], "unit": []}
+
+
+def collect_tests(manifest: dict) -> tuple[dict[str, dict], dict[str, dict]]:
+    """Return (counts, details) keyed by model unique_id.
+
+    counts:  unique_id -> {'generic': n, 'singular': n, 'unit': n}
+    details: unique_id -> {'generic': [...], 'singular': [...], 'unit': [...]}
+             where each entry carries enough to render the written test
+             (type/column/args, singular SQL, or unit given/expect) in the
+             dashboard -- no warehouse needed, it all lives in the manifest.
+    """
+    counts: dict[str, dict] = {}
+    details: dict[str, dict] = {}
     for node in manifest.get("nodes", {}).values():
         if node.get("resource_type") != "test":
             continue
-        kind = "generic" if node.get("test_metadata") else "singular"
+        if node.get("test_metadata"):
+            kind, entry = "generic", _generic_detail(node)
+        else:
+            kind, entry = "singular", _singular_detail(node)
         for dep in node.get("depends_on", {}).get("nodes", []):
             if dep.startswith("model."):
-                out.setdefault(dep, {"generic": 0, "singular": 0, "unit": 0})[kind] += 1
+                counts.setdefault(dep, {"generic": 0, "singular": 0, "unit": 0})[kind] += 1
+                details.setdefault(dep, _empty_detail())[kind].append(entry)
     for node in manifest.get("unit_tests", {}).values():
+        entry = _unit_detail(node)
         for dep in node.get("depends_on", {}).get("nodes", []):
             if dep.startswith("model."):
-                out.setdefault(dep, {"generic": 0, "singular": 0, "unit": 0})["unit"] += 1
-    return out
+                counts.setdefault(dep, {"generic": 0, "singular": 0, "unit": 0})["unit"] += 1
+                details.setdefault(dep, _empty_detail())["unit"].append(entry)
+    return counts, details
 
 
-def grade_model(node: dict, tests: dict) -> dict:
+def grade_model(node: dict, tests: dict, details: dict) -> dict:
     t = tests.get(node["unique_id"], {"generic": 0, "singular": 0, "unit": 0})
+    d = details.get(node["unique_id"], _empty_detail())
     categories = detect_categories(node.get("raw_code", ""))
     has_functional = t["generic"] > 0
     has_singular = t["singular"] > 0
@@ -87,6 +143,7 @@ def grade_model(node: dict, tests: dict) -> dict:
         "categories": categories,
         "categories_covered": covered,
         "tests": t,
+        "tests_detail": d,
         "grade": grade,
         "status": status,
     }
@@ -98,10 +155,10 @@ def main(argv: list[str]) -> int:
     root = project_root()
     manifest = load_manifest(root)
 
-    tests = collect_tests(manifest)
+    tests, details = collect_tests(manifest)
     models = in_scope_models(manifest, exempt)
 
-    grades = [grade_model(node, tests) for node in models.values()]
+    grades = [grade_model(node, tests, details) for node in models.values()]
     grades.sort(key=lambda g: (g["grade"] != "F", g["grade"], g["model"]))
 
     n = len(grades)

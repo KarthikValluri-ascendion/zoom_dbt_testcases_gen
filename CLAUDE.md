@@ -80,7 +80,10 @@ The interceptor answers "any test? yes/no". `graders.py` answers "is the model t
 logic it contains?" It regex-detects four categories from each model's `raw_code`
 (conditional_logic / dedup / string_transform / edge_case) and grades **A** (functional + unit),
 **B** (tested, no unit), **F** (untested). Output → `artifacts/grades.json`, `scorecard.md/.csv`;
-`build_dashboard.py` renders the HTML.
+`build_dashboard.py` renders the HTML. `graders.py` also embeds each model's per-test source
+(generic type/column/args, singular SQL, unit `given`/`expect`) under a `tests_detail` key in
+`grades.json`; the dashboard turns the **Tests (g/s/u)** counts into links that expand those
+written test cases inline (all embedded, so the HTML stays self-contained/offline).
 
 ### Test generators
 - `scaffold_tests.py` (pre-build, no warehouse): parses the manifest, writes `_ttd_stub__<model>.yml`

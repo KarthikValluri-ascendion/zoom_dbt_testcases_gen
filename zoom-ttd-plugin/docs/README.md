@@ -22,7 +22,7 @@ zoom-ttd-plugin/
 │       ├── scaffold_tests.py       # functional stub generator
 │       ├── generate_unit_tests.py  # characterization unit-test generator
 │       ├── graders.py              # A/B/F grader + scorecard
-│       └── build_dashboard.py      # self-contained HTML scorecard
+│       └── build_dashboard.py      # self-contained HTML scorecard (g/s/u counts link to inline test source)
 └── skills/                  # /zoom-ttd:{scaffold,enforce,gen-unit-tests,grade,build,dashboard,demo-reset}
 ```
 

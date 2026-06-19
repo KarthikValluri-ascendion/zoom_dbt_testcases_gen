@@ -70,7 +70,7 @@ Lives in [`zoom-ttd-plugin/`](zoom-ttd-plugin/). Install it as a local marketpla
 | Part | File | What it does |
 |------|------|--------------|
 | **Interceptor** | `assets/macros/ttd_intercept_coverage.sql` | `on-run-start` gate: aborts the build *before* anything materializes if any in-scope model has no test. Fail-fast = no wasted credits. |
-| **Graders** | `assets/scripts/graders.py` | Detects each model's logic categories from its SQL, then grades **A** (functional + unit), **B** (tested, no unit), **F** (untested). Writes `artifacts/grades.json` + scorecard. |
+| **Graders** | `assets/scripts/graders.py` | Detects each model's logic categories from its SQL, then grades **A** (functional + unit), **B** (tested, no unit), **F** (untested). Writes `artifacts/grades.json` (incl. per-test source under `tests_detail`) + scorecard. |
 | **Generators** | `scaffold_tests.py`, `generate_unit_tests.py` | Auto-write functional stubs (no warehouse) and **characterization unit tests** by sampling real rows and running the model on mocked inputs. |
 
 Slash commands: `/zoom-ttd:{enforce, scaffold, gen-unit-tests, grade, build, dashboard, demo-reset}`.
@@ -89,7 +89,7 @@ export DBT_PROFILES_DIR=.
 /zoom-ttd:demo-reset        # delete generated tests -> fct_meetings is untested (RED)
 /zoom-ttd:enforce           # gate FAILS: ">>> TTD COVERAGE GATE FAILED ... fct_meetings"
 /zoom-ttd:build             # scaffold -> build -> gen unit tests -> run -> grade  (GREEN)
-/zoom-ttd:dashboard         # open artifacts/zoom_ttd_scorecard.html
+/zoom-ttd:dashboard         # open artifacts/zoom_ttd_scorecard.html (click a g/s/u count to view the test source inline)
 ```
 
 Verified output: gate **PASS**, **A=3 B=3 F=0** of 6 models; the auto-generated
