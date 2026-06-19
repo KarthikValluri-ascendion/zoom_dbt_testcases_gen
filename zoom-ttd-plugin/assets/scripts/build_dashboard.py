@@ -5,13 +5,101 @@ grades.json.
 """
 from __future__ import annotations
 
+import html
 import json
+import re
 import sys
 from pathlib import Path
 
 from _common import project_root
 
 GRADE_COLOR = {"A": "#1a7f37", "B": "#9a6700", "F": "#cf222e"}
+
+
+def _safe_id(name: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_]", "_", name)
+
+
+def _count_cell(model_id: str, t: dict) -> str:
+    """Render the g/s/u cell, each non-zero count a link to its detail group."""
+    parts = []
+    for kind, key in (("generic", "g"), ("singular", "s"), ("unit", "u")):
+        n = t.get(kind, 0)
+        if n:
+            parts.append(
+                f'<a class="tl" onclick="tl(\'{model_id}\',\'{kind}\')" '
+                f'title="show {kind} tests">{n}</a>'
+            )
+        else:
+            parts.append(f'<span class="z">{n}</span>')
+    return " / ".join(parts)
+
+
+def _render_generic(items: list[dict]) -> str:
+    if not items:
+        return "<p class='none'>No generic (schema) tests.</p>"
+    rows = []
+    for it in items:
+        args = it.get("args") or {}
+        extra = ""
+        if args:
+            kv = ", ".join(f"{html.escape(str(k))}={html.escape(json.dumps(v))}"
+                           for k, v in args.items())
+            extra = f' <span class="args">({kv})</span>'
+        col = it.get("column")
+        on = f" on <code>{html.escape(col)}</code>" if col else ""
+        rows.append(
+            f'<li><code>{html.escape(it.get("type",""))}</code>{on}{extra}'
+            f'<span class="file">{html.escape(it.get("file",""))}</span></li>'
+        )
+    return f"<ul class='glist'>{''.join(rows)}</ul>"
+
+
+def _render_singular(items: list[dict]) -> str:
+    if not items:
+        return "<p class='none'>No singular tests.</p>"
+    blocks = []
+    for it in items:
+        blocks.append(
+            f'<div class="tcase"><div class="tname"><code>{html.escape(it.get("name",""))}</code>'
+            f'<span class="file">{html.escape(it.get("file",""))}</span></div>'
+            f'<pre>{html.escape(it.get("sql","").strip())}</pre></div>'
+        )
+    return "".join(blocks)
+
+
+def _render_unit(items: list[dict]) -> str:
+    if not items:
+        return "<p class='none'>No unit tests.</p>"
+    blocks = []
+    for it in items:
+        given = it.get("given", [])
+        expect = it.get("expect", {})
+        blocks.append(
+            f'<div class="tcase"><div class="tname"><code>{html.escape(it.get("name",""))}</code>'
+            f'<span class="file">{html.escape(it.get("file",""))}</span></div>'
+            f'<div class="ulabel">given</div>'
+            f'<pre>{html.escape(json.dumps(given, indent=2))}</pre>'
+            f'<div class="ulabel">expect</div>'
+            f'<pre>{html.escape(json.dumps(expect, indent=2))}</pre></div>'
+        )
+    return "".join(blocks)
+
+
+def _detail_row(model_id: str, detail: dict, ncols: int) -> str:
+    """Hidden row holding the three test groups; toggled by the count links."""
+    groups = (
+        f'<div class="tg" id="g_{model_id}_generic"><h4>Generic / schema tests</h4>'
+        f'{_render_generic(detail.get("generic", []))}</div>'
+        f'<div class="tg" id="g_{model_id}_singular"><h4>Singular tests</h4>'
+        f'{_render_singular(detail.get("singular", []))}</div>'
+        f'<div class="tg" id="g_{model_id}_unit"><h4>Unit tests</h4>'
+        f'{_render_unit(detail.get("unit", []))}</div>'
+    )
+    return (
+        f'<tr class="detail" id="d_{model_id}" style="display:none">'
+        f'<td colspan="{ncols}">{groups}</td></tr>'
+    )
 
 
 def main(argv: list[str]) -> int:
@@ -24,9 +112,12 @@ def main(argv: list[str]) -> int:
 
     gate_color = "#1a7f37" if run["gate"] == "PASS" else "#cf222e"
 
+    NCOLS = 7
     rows = []
     for m in models:
         t = m["tests"]
+        mid = _safe_id(m["model"])
+        detail = m.get("tests_detail", {"generic": [], "singular": [], "unit": []})
         rows.append(f"""
       <tr>
         <td><code>{m['model']}</code></td>
@@ -35,8 +126,9 @@ def main(argv: list[str]) -> int:
         <td>{m['status']}</td>
         <td>{', '.join(m['categories']) or '&ndash;'}</td>
         <td>{', '.join(m['categories_covered']) or '&ndash;'}</td>
-        <td style="text-align:center">{t['generic']} / {t['singular']} / {t['unit']}</td>
+        <td style="text-align:center" class="tcell">{_count_cell(mid, t)}</td>
       </tr>""")
+        rows.append(_detail_row(mid, detail, NCOLS))
 
     html = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -60,6 +152,23 @@ def main(argv: list[str]) -> int:
   .lin {{ background:#fff; border:1px solid #d0d7de; border-radius:10px; padding:16px 20px; margin-top:24px; font-size:13px; }}
   .lin code {{ font-size:12px; }}
   footer {{ text-align:center; color:#656d76; font-size:12px; margin:24px; }}
+  .tcell {{ white-space:nowrap; }}
+  a.tl {{ color:#0b5cff; font-weight:700; cursor:pointer; text-decoration:none; }}
+  a.tl:hover {{ text-decoration:underline; }}
+  .tcell .z {{ color:#afb6be; }}
+  tr.detail td {{ background:#fbfcfe; padding:0; }}
+  tr.detail .tg {{ padding:14px 18px; border-top:2px solid #0b5cff; }}
+  tr.detail h4 {{ margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:#0b5cff; }}
+  tr.detail .none {{ margin:0; color:#656d76; font-size:13px; }}
+  tr.detail ul.glist {{ margin:0; padding-left:18px; }}
+  tr.detail ul.glist li {{ margin:3px 0; font-size:13px; }}
+  tr.detail .args {{ color:#656d76; }}
+  tr.detail .file {{ color:#8a929b; font-size:11px; margin-left:8px; }}
+  tr.detail .tcase {{ margin-bottom:14px; }}
+  tr.detail .tname {{ font-size:13px; margin-bottom:4px; }}
+  tr.detail .ulabel {{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#656d76; margin:6px 0 2px; }}
+  tr.detail pre {{ margin:0; background:#0d1117; color:#e6edf3; padding:10px 12px; border-radius:8px;
+                   font-size:12px; line-height:1.45; overflow:auto; max-height:340px; }}
 </style></head>
 <body>
 <header>
@@ -89,10 +198,27 @@ def main(argv: list[str]) -> int:
     <code>seeds (raw_*)</code> &rarr; <code>bronze (brz_*)</code> &rarr;
     <code>silver (slv_*)</code> &rarr; <code>gold (dim_*, fct_meetings)</code><br><br>
     <strong>Grades:</strong> A = functional + unit test (logic categories exercised) &middot;
-    B = tested but no unit test &middot; F = untested (blocked by the on-run-start interceptor).
+    B = tested but no unit test &middot; F = untested (blocked by the on-run-start interceptor).<br><br>
+    <strong>Tip:</strong> click any count in the <em>Tests (g/s/u)</em> column to view the written test cases inline.
   </div>
 </div>
-<footer>zoom-ttd &middot; tests (g/s/u) = generic / singular / unit</footer>
+<footer>zoom-ttd &middot; tests (g/s/u) = generic / singular / unit &middot; click a count to see the test source</footer>
+<script>
+  function tl(id, kind) {{
+    var row = document.getElementById('d_' + id);
+    var target = document.getElementById('g_' + id + '_' + kind);
+    if (!row || !target) return;
+    var groups = row.querySelectorAll('.tg');
+    var isOpen = row.style.display !== 'none' && target.style.display !== 'none';
+    groups.forEach(function (g) {{ g.style.display = 'none'; }});
+    if (isOpen) {{
+      row.style.display = 'none';
+    }} else {{
+      row.style.display = 'table-row';
+      target.style.display = 'block';
+    }}
+  }}
+</script>
 </body></html>"""
 
     out = root / "artifacts" / "zoom_ttd_scorecard.html"

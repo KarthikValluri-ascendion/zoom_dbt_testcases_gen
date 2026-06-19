@@ -117,7 +117,7 @@ Run these in order. This is the heart of the demo.
 | 2 | `/zoom-ttd:enforce` | Runs the gate read-only. **FAILS** with a banner naming `fct_meetings` | ✅ **fires** | — | reads dbt `graph.nodes` → prints `>>> TTD COVERAGE GATE FAILED … fct_meetings` |
 | 3 | `/zoom-ttd:grade` | Scores every model. `fct_meetings` = **F** (untested) | — | ✅ **fires** | reads `target/manifest.json` → writes `artifacts/grades.json`, `scorecard.md/.csv` |
 | 4 | `/zoom-ttd:build` | The fix: scaffolds a stub, builds, **generates a unit test from real rows**, runs all tests, regrades → **GREEN** | ✅ (build re-checks) | ✅ (final step) | manifest + live warehouse rows → `_ttd_stub__fct_meetings.yml`, `_ttd_unit__fct_meetings.yml`, refreshed scorecard |
-| 5 | `/zoom-ttd:dashboard` | Renders the executive HTML scorecard to open in a browser | — | — | reads `grades.json` → writes `artifacts/zoom_ttd_scorecard.html` |
+| 5 | `/zoom-ttd:dashboard` | Renders the executive HTML scorecard to open in a browser (click any **Tests g/s/u** count to view that model's written test cases inline) | — | — | reads `grades.json` → writes `artifacts/zoom_ttd_scorecard.html` |
 
 ### Step 2 — the money shot (RED)
 `/zoom-ttd:enforce` aborts with:
