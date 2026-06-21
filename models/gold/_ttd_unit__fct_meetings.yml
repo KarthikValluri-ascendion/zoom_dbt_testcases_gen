@@ -1,0 +1,43 @@
+version: 2
+
+# AUTO-GENERATED characterization unit test by zoom-ttd (gen-unit-tests).
+# Mocked inputs -> captured output. Pins current behaviour; review before trusting.
+unit_tests:
+  - name: test_fct_meetings_characterization
+    description: "Characterization of fct_meetings on key-correlated sampled rows."
+    model: fct_meetings
+    given:
+      - input: ref('slv_meetings')
+        rows:
+          - {meeting_id: 'M0002', account_id: 'A001', host_email: 'ALICE@ACME.COM', topic: 'Design Review', meeting_status: 'ended', start_at: '2026-01-06T14:00:00', meeting_month: '2026-01-01', duration_minutes: 60, invited_count: 5, is_long_meeting: true}
+          - {meeting_id: 'M0010', account_id: 'A003', host_email: 'CAROL@INITECH.COM', topic: 'Security Sync', meeting_status: 'ended', start_at: '2026-01-13T17:00:00', meeting_month: '2026-01-01', duration_minutes: 35, invited_count: 15, is_long_meeting: false}
+          - {meeting_id: 'M0003', account_id: 'A002', host_email: 'BOB@GLOBEX.COM', topic: 'Sales Pipeline', meeting_status: 'ended', start_at: '2026-01-05T10:30:00', meeting_month: '2026-01-01', duration_minutes: 30, invited_count: 12, is_long_meeting: false}
+          - {meeting_id: 'M0004', account_id: 'A003', host_email: 'CAROL@INITECH.COM', topic: 'All Hands', meeting_status: 'ended', start_at: '2026-01-07T16:00:00', meeting_month: '2026-01-01', duration_minutes: 90, invited_count: 200, is_long_meeting: true}
+          - {meeting_id: 'M0008', account_id: 'A006', host_email: 'FRANK@STARK.COM', topic: 'Quarterly Review', meeting_status: 'scheduled', start_at: '2026-01-12T09:30:00', meeting_month: '2026-01-01', duration_minutes: 120, invited_count: 40, is_long_meeting: true}
+          - {meeting_id: 'M0006', account_id: 'A004', host_email: 'DAVE@UMBRELLA.COM', topic: 'Onboarding', meeting_status: 'started', start_at: '2026-01-09T13:00:00', meeting_month: '2026-01-01', duration_minutes: 25, invited_count: 5, is_long_meeting: false}
+          - {meeting_id: 'M0005', account_id: 'A002', host_email: 'BOB@GLOBEX.COM', topic: '1:1 Catchup', meeting_status: 'cancelled', start_at: '2026-01-08T11:00:00', meeting_month: '2026-01-01', duration_minutes: 0, invited_count: 2, is_long_meeting: false}
+          - {meeting_id: 'M0001', account_id: 'A001', host_email: 'ALICE@ACME.COM', topic: 'Weekly Sync', meeting_status: 'ended', start_at: '2026-01-05T09:00:00', meeting_month: '2026-01-01', duration_minutes: 45, invited_count: 8, is_long_meeting: false}
+      - input: ref('slv_participants')
+        rows:
+          - {meeting_id: 'M0004', participant_id: 'P09', participant_email: 'LEO@INITECH.COM', join_at: '2026-01-07T16:00:00', leave_at: '2026-01-07T17:00:00', attended_minutes: 60}
+          - {meeting_id: 'M0010', participant_id: 'P11', participant_email: 'MIKE@INITECH.COM', join_at: '2026-01-13T17:01:00', leave_at: '2026-01-13T17:33:00', attended_minutes: 32}
+          - {meeting_id: 'M0003', participant_id: 'P06', participant_email: 'JUDY@GLOBEX.COM', join_at: '2026-01-05T10:32:00', leave_at: '2026-01-05T10:32:00', attended_minutes: 0}
+          - {meeting_id: 'M0002', participant_id: 'P01', participant_email: 'ALICE@ACME.COM', join_at: '2026-01-06T14:00:00', leave_at: '2026-01-06T15:00:00', attended_minutes: 60}
+          - {meeting_id: 'M0001', participant_id: 'P03', participant_email: 'HEIDI@ACME.COM', join_at: '2026-01-05T09:01:00', leave_at: '2026-01-05T09:30:00', attended_minutes: 29}
+          - {meeting_id: 'M0010', participant_id: 'P07', participant_email: 'CAROL@INITECH.COM', join_at: '2026-01-13T17:00:00', leave_at: '2026-01-13T17:35:00', attended_minutes: 35}
+          - {meeting_id: 'M0004', participant_id: 'P07', participant_email: 'CAROL@INITECH.COM', join_at: '2026-01-07T16:00:00', leave_at: '2026-01-07T17:30:00', attended_minutes: 90}
+          - {meeting_id: 'M0001', participant_id: 'P01', participant_email: 'ALICE@ACME.COM', join_at: '2026-01-05T09:00:00', leave_at: '2026-01-05T09:45:00', attended_minutes: 45}
+          - {meeting_id: 'M0001', participant_id: 'P02', participant_email: 'GREG@ACME.COM', join_at: '2026-01-05T09:02:00', leave_at: '2026-01-05T09:44:00', attended_minutes: 42}
+          - {meeting_id: 'M0003', participant_id: 'P05', participant_email: 'BOB@GLOBEX.COM', join_at: '2026-01-05T10:30:00', leave_at: '2026-01-05T11:00:00', attended_minutes: 30}
+          - {meeting_id: 'M0002', participant_id: 'P04', participant_email: 'IVAN@ACME.COM', join_at: '2026-01-06T14:05:00', leave_at: '2026-01-06T14:55:00', attended_minutes: 50}
+          - {meeting_id: 'M0004', participant_id: 'P08', participant_email: 'KEN@INITECH.COM', join_at: '2026-01-07T16:10:00', leave_at: '2026-01-07T16:05:00', attended_minutes: 0}
+    expect:
+      rows:
+        - {meeting_id: 'M0005', account_id: 'A002', host_email: 'BOB@GLOBEX.COM', meeting_status: 'cancelled', start_at: '2026-01-08T11:00:00', meeting_month: '2026-01-01', duration_minutes: 0, invited_count: 2, participant_count: 0, total_attended_minutes: 0, avg_attended_minutes: 0.0, engagement_score: }
+        - {meeting_id: 'M0003', account_id: 'A002', host_email: 'BOB@GLOBEX.COM', meeting_status: 'ended', start_at: '2026-01-05T10:30:00', meeting_month: '2026-01-01', duration_minutes: 30, invited_count: 12, participant_count: 2, total_attended_minutes: 30, avg_attended_minutes: 15.0, engagement_score: 50.0}
+        - {meeting_id: 'M0001', account_id: 'A001', host_email: 'ALICE@ACME.COM', meeting_status: 'ended', start_at: '2026-01-05T09:00:00', meeting_month: '2026-01-01', duration_minutes: 45, invited_count: 8, participant_count: 3, total_attended_minutes: 116, avg_attended_minutes: 38.666667, engagement_score: 85.9}
+        - {meeting_id: 'M0004', account_id: 'A003', host_email: 'CAROL@INITECH.COM', meeting_status: 'ended', start_at: '2026-01-07T16:00:00', meeting_month: '2026-01-01', duration_minutes: 90, invited_count: 200, participant_count: 3, total_attended_minutes: 150, avg_attended_minutes: 50.0, engagement_score: 55.6}
+        - {meeting_id: 'M0002', account_id: 'A001', host_email: 'ALICE@ACME.COM', meeting_status: 'ended', start_at: '2026-01-06T14:00:00', meeting_month: '2026-01-01', duration_minutes: 60, invited_count: 5, participant_count: 2, total_attended_minutes: 110, avg_attended_minutes: 55.0, engagement_score: 90.0}
+        - {meeting_id: 'M0008', account_id: 'A006', host_email: 'FRANK@STARK.COM', meeting_status: 'scheduled', start_at: '2026-01-12T09:30:00', meeting_month: '2026-01-01', duration_minutes: 120, invited_count: 40, participant_count: 0, total_attended_minutes: 0, avg_attended_minutes: 0.0, engagement_score: 0.0}
+        - {meeting_id: 'M0010', account_id: 'A003', host_email: 'CAROL@INITECH.COM', meeting_status: 'ended', start_at: '2026-01-13T17:00:00', meeting_month: '2026-01-01', duration_minutes: 35, invited_count: 15, participant_count: 2, total_attended_minutes: 67, avg_attended_minutes: 33.5, engagement_score: 90.0}
+        - {meeting_id: 'M0006', account_id: 'A004', host_email: 'DAVE@UMBRELLA.COM', meeting_status: 'started', start_at: '2026-01-09T13:00:00', meeting_month: '2026-01-01', duration_minutes: 25, invited_count: 5, participant_count: 0, total_attended_minutes: 0, avg_attended_minutes: 0.0, engagement_score: 0.0}
