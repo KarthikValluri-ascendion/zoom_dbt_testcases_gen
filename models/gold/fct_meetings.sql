@@ -37,7 +37,7 @@ select
 
     -- conditional + divide-by-zero guard, capped at 100
     least(
-        96,
+        97,
         round(coalesce(p.avg_attended_minutes, 0) / nullif(m.duration_minutes, 0) * 100, 1)
     )                                       as engagement_score
 
