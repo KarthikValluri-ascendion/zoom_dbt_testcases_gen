@@ -13,7 +13,8 @@ venv/
 # local convenience wrapper: loads Snowflake creds from ~/.snowflake/connections.toml
 zttd_conn.py
 # generated executive dashboard output is fine to ignore by default
-# artifacts/   # (uncomment if you do NOT want to track the scorecard outputs)
+# (CI regenerates these via the grade step and uploads them as a build artifact)
+artifacts/
 
 # OS
 .DS_Store
