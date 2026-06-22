@@ -35,9 +35,9 @@ select
     coalesce(p.total_attended_minutes, 0)   as total_attended_minutes,
     coalesce(p.avg_attended_minutes, 0)     as avg_attended_minutes,
 
-    -- conditional + divide-by-zero guard, capped at 95
+    -- conditional + divide-by-zero guard, capped at 100
     least(
-        95,
+        100,
         round(coalesce(p.avg_attended_minutes, 0) / nullif(m.duration_minutes, 0) * 100, 1)
     )                                       as engagement_score
 
