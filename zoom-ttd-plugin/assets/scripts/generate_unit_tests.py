@@ -116,6 +116,7 @@ def gen_for_model(root: Path, manifest: dict, node: dict, sample: int) -> tuple[
         return False, _skeleton(name, cols)
 
     given_blocks: list[str] = []
+    any_rows = False
     for up in upstreams:
         up_name = up["name"]
         up_types = column_types(root, up)
@@ -125,12 +126,21 @@ def gen_for_model(root: Path, manifest: dict, node: dict, sample: int) -> tuple[
         else:
             sql = f"select * from {rel} limit {sample}"
         rows = show_inline(root, sql, limit=5000)
-        if not rows:
-            # no correlated rows -> cannot build a faithful test
-            return False, _skeleton(name, cols)
         given_blocks.append(f"      - input: ref('{up_name}')")
-        given_blocks.append("        rows:")
-        given_blocks.extend(_yaml_rows(rows, "          "))
+        if rows:
+            any_rows = True
+            given_blocks.append("        rows:")
+            given_blocks.extend(_yaml_rows(rows, "          "))
+        else:
+            # An upstream with no correlated rows is the legitimate optional
+            # side of a left join (e.g. meetings with no participants), not a
+            # failure: mock it as an empty input so the model still reproduces
+            # the captured `expect` (coalesce -> 0). Bailing to a skeleton here
+            # made generation flaky on the row sample.
+            given_blocks.append("        rows: []")
+    if not any_rows:
+        # every input came back empty -> output genuinely can't be reproduced
+        return False, _skeleton(name, cols)
 
     lines = [
         "version: 2",
